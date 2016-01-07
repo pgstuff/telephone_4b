@@ -1,0 +1,196 @@
+\set ECHO none
+CREATE TABLE telephone_4bs(id serial primary key, telephone_4b telephone_4b unique);
+INSERT INTO telephone_4bs(telephone_4b) VALUES('12345678');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('9*#');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('1 1');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('2p2');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('2w2');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('1/1');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('1,1');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('1;1');;
+INSERT INTO telephone_4bs(telephone_4b) VALUES('10000003');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('20000002');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('30000001');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('4  4');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('4 / 4');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('4 ; 4');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('4 , 4');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('5 // 5');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('5 ;; 5');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('5 ,, 5');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('6 , / , 6');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('6 , ; , 6');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('7 , / , 7');
+INSERT INTO telephone_4bs(telephone_4b) VALUES('7 , ; , 7');
+INSERT INTO telephone_4bs(telephone_4b) VALUES(''); -- test limits
+INSERT INTO telephone_4bs(telephone_4b) VALUES('########');
+SELECT * FROM telephone_4bs ORDER BY telephone_4b;
+ id | telephone_4b 
+----+--------------
+ 23 |  
+  3 | 1 1
+  6 | 1/1
+  8 | 1;1
+  7 | 1,1
+  5 | 2;2
+  4 | 2,2
+ 12 | 4 4
+ 13 | 4/4
+ 14 | 4;4
+ 15 | 4,4
+ 16 | 5/5
+ 17 | 5;5
+ 19 | 6/6
+ 20 | 6;6
+ 21 | 7/7
+ 22 | 7;7
+  2 | 9*#
+ 18 | 5,,5
+  9 | 10000003
+  1 | 12345678
+ 10 | 20000002
+ 11 | 30000001
+ 24 | ########
+(24 rows)
+
+SELECT MIN(telephone_4b) AS min FROM telephone_4bs;
+ min 
+-----
+  
+(1 row)
+
+SELECT MAX(telephone_4b) AS max FROM telephone_4bs;
+   max    
+----------
+ ########
+(1 row)
+
+-- index scan
+TRUNCATE telephone_4bs;
+INSERT INTO telephone_4bs(telephone_4b) SELECT '4'||id FROM generate_series(5678, 8000) id;
+SELECT id,telephone_4b::text FROM telephone_4bs WHERE telephone_4b = '48000';
+  id  | telephone_4b 
+------+--------------
+ 2347 | 48000
+(1 row)
+
+SET enable_seqscan = false;
+SELECT id,telephone_4b::text FROM telephone_4bs WHERE telephone_4b = '46000';
+ id  | telephone_4b 
+-----+--------------
+ 347 | 46000
+(1 row)
+
+SELECT id,telephone_4b FROM telephone_4bs WHERE telephone_4b >= '47000' LIMIT 5;
+  id  | telephone_4b 
+------+--------------
+ 1347 | 47000
+ 1348 | 47001
+ 1349 | 47002
+ 1350 | 47003
+ 1351 | 47004
+(5 rows)
+
+SELECT count(id) FROM telephone_4bs;
+ count 
+-------
+  2323
+(1 row)
+
+SELECT count(id) FROM telephone_4bs WHERE telephone_4b <> ('46500'::text)::telephone_4b;
+ count 
+-------
+  2322
+(1 row)
+
+RESET enable_seqscan;
+-- operators and conversions
+SELECT '0'::telephone_4b < '0'::telephone_4b;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT '0'::telephone_4b > '0'::telephone_4b;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT '0'::telephone_4b < '1'::telephone_4b;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT '0'::telephone_4b > '1'::telephone_4b;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT '0'::telephone_4b <= '0'::telephone_4b;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT '0'::telephone_4b >= '0'::telephone_4b;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT '0'::telephone_4b <= '1'::telephone_4b;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT '0'::telephone_4b >= '1'::telephone_4b;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT '0'::telephone_4b <> '0'::telephone_4b;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT '0'::telephone_4b <> '1'::telephone_4b;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT '0'::telephone_4b = '0'::telephone_4b;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT '0'::telephone_4b = '1'::telephone_4b;
+ ?column? 
+----------
+ f
+(1 row)
+
+-- COPY FROM/TO
+TRUNCATE telephone_4bs;
+COPY telephone_4bs(telephone_4b) FROM STDIN;
+COPY telephone_4bs TO STDOUT;
+2348	 
+2349	########
+-- clean up --
+DROP TABLE telephone_4bs;
+-- errors
+SELECT '100000000'::telephone_4b;
+ERROR:  telephone_4b number "100000000" must be 8 digits or smaller.
+LINE 1: SELECT '100000000'::telephone_4b;
+               ^
+SELECT '!'::telephone_4b;
+ERROR:  telephone_4b number "!" must only contain digits 0 to 9, space, *, #, ,, p, ;, w, and A-Z.
+LINE 1: SELECT '!'::telephone_4b;
+               ^
